@@ -1,7 +1,7 @@
 use std::{fs, u32};
 use std::collections::HashMap;
 
-const FILE_PATH: &str = "src/services/day_one__input.txt";
+const FILE_PATH: &str = "src/services/inputs/day_one__input.txt";
 const STRINGS: [&str;18] = [
     "one", "two", "three", 
     "four", "five", "six", 
