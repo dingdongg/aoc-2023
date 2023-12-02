@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::fs;
 // sum of the IDs of games that were possible, given that:
 // maximum # reds: 12
@@ -35,6 +36,38 @@ pub fn sum_game_ids() -> () {
     }
 
     println!("sum: {}", sum);
+}
+
+pub fn sum_min_set_powers() -> () {
+    let input = fs::read_to_string(FILE_PATH)
+        .expect("SHOULDVE READ THE FILE JUST FINE");
+
+    let mut sum: u32 = 0;
+
+    for (i, game_line) in input.split("\n").enumerate() {
+        println!("Game #{}:\n", i + 1);
+        sum += get_power(game_line);
+    }
+
+    println!("sum of minimum set powers: {}", sum);
+}
+
+fn get_power(game_line: &str) -> u32 {
+    let game = game_line.split(": ").last().unwrap();
+    let subsets: Vec<&str> = game.split("; ").collect(); // ["3 blue, 4 red", "1 red, 2 green, 6 blue", "2 green"]
+    let (mut min_red, mut min_blue, mut min_green) = (0, 0, 0);
+
+    for subset in subsets {
+        let counts: (u32, u32, u32) = parse_subset_count(subset);
+
+        min_red = max(min_red, counts.0);
+        min_blue = max(min_blue, counts.1);
+        min_green = max(min_green, counts.2);
+    }
+
+    println!("\t min set: {} reds, {} blues, {} greens", min_red, min_blue, min_green);
+    
+    min_red * min_blue * min_green
 }
 
 fn is_game_possible(game_line: &str) -> bool {
