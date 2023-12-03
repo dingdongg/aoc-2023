@@ -1,5 +1,6 @@
 use std::fs;
 use std::cmp::{min, max};
+use std::collections::HashMap;
 
 const FILE_PATH: &str = "src/services/inputs/day_three__input.txt";
 
@@ -102,5 +103,84 @@ fn parse_input(input: Vec<u8>) -> Vec<Vec<char>> {
     }
 
     ret.push(row.clone());
+    ret
+}
+
+/// part 2 below
+
+pub fn sum_gear_ratios() -> () {
+    let input = fs::read(FILE_PATH).expect("SHOULD READ THE FILE JUST FINE");
+    let parsed_input = parse_input(input);
+
+    let mut gear_ratio_sum = 0;
+    let nums = get_num_info(&parsed_input);
+    let mut new_nums: HashMap<usize, Vec<(usize, u32, usize)>> = HashMap::new();
+
+    for num in nums {
+        match new_nums.get_mut(&num.0) {
+            Some(vec) => {
+                vec.push((num.1, num.2, num.3));
+            },
+            None => {
+                new_nums.insert(num.0, vec![(num.1, num.2, num.3)]);
+            },
+        };
+    }
+
+    let gears = get_gear_info(&parsed_input);
+
+    for gear_info in gears {
+        gear_ratio_sum += get_gear_ratio(gear_info, &new_nums, &parsed_input);
+    }
+    
+    println!("gear ratio sum: {}", gear_ratio_sum);
+    // locate all numbers
+    // locate all asterisks
+    // for every asterisk at (i, j), iterate rows i - 1 to i + 1 inclusive (however, consider edge cases)
+        // for every row, check all numbers
+            // for every number, if j - 1 <= starting index <= j + 1 or j - 1 <= last digit <= j + 1, 
+            // increment count by 1
+        // if count == 2, calculate gear ratio (first num * second num). add gear ratio to sum
+    // return sum
+}
+
+fn get_gear_ratio(gear_info: (usize, usize), nums: &HashMap<usize, Vec<(usize, u32, usize)>>, matrix: &Vec<Vec<char>>) -> u32 {
+    let (row, offset) = gear_info;
+    let max_index = matrix.len();
+
+    let rows: Vec<usize> = (max(row - 1, 0)..min(row + 2, max_index)).collect();
+    let offset_range = max(offset - 1, 0)..min(offset + 2, max_index);
+    let mut count = 0;
+    let mut gear_ratio = 1;
+
+    for row in rows {
+        let nums = nums.get(&row).unwrap();
+
+        for num in nums {
+            if offset_range.contains(&num.0) || offset_range.contains(&(num.0 + num.2 - 1)) {
+                count += 1;
+                gear_ratio *= num.1;
+            }
+        }
+    }
+
+    if count == 2 {
+        return gear_ratio;
+    }
+
+    0
+}
+
+fn get_gear_info(matrix: &Vec<Vec<char>>) -> Vec<(usize, usize)> {
+    let mut ret: Vec<(usize, usize)> = Vec::new();
+
+    for (row_num, row) in matrix.iter().enumerate() {
+        for (i, cell) in row.iter().enumerate() {
+            if *cell == '*' {
+                ret.push((row_num, i));
+            }
+        }
+    }
+
     ret
 }
