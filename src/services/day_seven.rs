@@ -5,21 +5,21 @@ use std::ptr::null;
 const FILE_PATH: &str = "src/services/inputs/day_seven__input.txt";
 
 const CARDS: [char;13] = [
-    'A', 'K', 'Q', 'J',
+    'A', 'K', 'Q',
     'T', '9', '8', '7', 
     '6', '5', '4', '3', 
-    '2',
+    '2', 'J',
 ];
 
 #[derive(Debug)]
 enum HandPower {
-    FiveKind,
-    FourKind,
-    FullHouse,
-    ThreeKind,
-    TwoPair, 
-    OnePair,
-    HighCard,
+    FiveKind, // if has joker, all cards are jokers; doesn't get any better (1)
+    FourKind, // if has joker, can become FiveKind (2)
+    FullHouse, // if has joker, can become FiveKind (2)
+    ThreeKind, // if has joker, can become FourKind (3)
+    TwoPair, // if has 2 jokers, can become FourKind; if has 1 joker, can become FullHouse (3)
+    OnePair, // if has joker, can become ThreeKind (4)
+    HighCard, // if has joker, can become OnePair (5)
 }
 
 impl HandPower {
@@ -56,6 +56,16 @@ impl Hand {
         }
 
         -1
+    }
+
+    fn joker_count(&self) -> i32 {
+        let mut ret = 0;
+
+        for b in self.cards.as_bytes() {
+            if *b == b'J' { ret += 1 } 
+        }
+
+        ret
     }
 
     fn get_card(&self, index: usize) -> char {
@@ -133,6 +143,18 @@ fn parse_input(input: String) -> Vec<Hand> {
     parsed_input
 }
 
+fn joker_count(cards: &str) -> i32 {
+    let mut ret = 0;
+
+    for card_byte in cards.as_bytes() {
+        if *card_byte == b'J' {
+            ret += 1;
+        }
+    }
+
+    ret
+}
+
 fn get_cards_power(cards: &str) -> HandPower {
     let mut cards_map: HashMap<char, usize> = HashMap::new();
 
@@ -144,8 +166,28 @@ fn get_cards_power(cards: &str) -> HandPower {
     }
 
     let num_cards = cards_map.keys().len();
+    let hand_power = match_num_cards(num_cards, cards_map);
+    let joker_count = joker_count(cards);
 
-    match_num_cards(num_cards, cards_map)
+    if joker_count != 0 {
+        return match_num_cards_with_joker(hand_power, joker_count);
+    }
+
+    hand_power
+}
+
+fn match_num_cards_with_joker(hand_power: HandPower, joker_count: i32) -> HandPower {
+    match hand_power {
+        HandPower::FiveKind => HandPower::FiveKind,
+        HandPower::FourKind => HandPower::FiveKind,
+        HandPower::FullHouse => HandPower::FiveKind,
+        HandPower::ThreeKind => HandPower::FourKind,
+        HandPower::TwoPair => {
+            if joker_count == 2 { return HandPower::FourKind; } else { return HandPower::FullHouse; }
+        },
+        HandPower::OnePair => HandPower::ThreeKind,
+        HandPower::HighCard => HandPower::OnePair,
+    }
 }
 
 fn match_num_cards(num_cards: usize, map: HashMap<char, usize>) -> HandPower {
@@ -173,3 +215,4 @@ fn match_num_cards(num_cards: usize, map: HashMap<char, usize>) -> HandPower {
         _ => panic!("BRUHHHH"),
     }
 }
+
