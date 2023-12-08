@@ -13,5 +13,6 @@ fn main() {
     // services::day_five::get_lowest_location();
     // services::day_five::get_lowest_location_from_ranges();
     // services::day_six::count_record_beating_strats();
-    services::day_six::solve();
+    // services::day_six::solve();
+    services::day_seven::get_total_winnings();
 }
