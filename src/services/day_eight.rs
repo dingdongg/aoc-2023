@@ -1,4 +1,4 @@
-use core::panic;
+use std::cmp::max;
 use std::fs;
 use std::collections::HashMap;
 
@@ -88,27 +88,57 @@ pub fn solve() -> () {
     let sequence = parse_sequence(splitted_input[0]);
     let sequence_leng = sequence.len();
     let network = parse_network(splitted_input[1]);
+    let curr_node_keys = get_starting_nodes(&network);
 
-    let mut num_steps = 0;
-    let mut i: usize = 0;
-    let mut curr_node_keys = get_starting_nodes(&network);
+    let mut prime_factors = HashMap::new();
 
-    while !all_nodes_finished(&curr_node_keys) {
-        let mut next_nodes = Vec::new();
-        let next_step = &sequence[i];
+    for starting_key in curr_node_keys {
+        let mut curr_node_key = starting_key;
+        let mut steps_for_this_path: u128 = 0;
+        let mut i: usize = 0;
 
-        for curr_node_key in curr_node_keys {
+        while !curr_node_key.ends_with('Z') {
             let curr_node = network.get(curr_node_key).unwrap();
-            next_nodes.push(curr_node.get_next_node(&next_step));
+            let next_step = &sequence[i];
+
+            curr_node_key = curr_node.get_next_node(&next_step);
+            i = (i + 1) % sequence_leng;
+            steps_for_this_path += 1;
         }
-        
-        curr_node_keys = next_nodes;
-        println!("next nodes: {:#?}", curr_node_keys);
-        i = (i + 1) % sequence_leng;
-        num_steps += 1;
+
+        println!("num steps for path from {} -> {}: {}", starting_key, curr_node_key, steps_for_this_path);
+        let mut temp_map = HashMap::new();
+
+        for j in 2..steps_for_this_path {
+            if steps_for_this_path % j == 0 {
+                temp_map.insert(
+                    j,
+                    1 + if temp_map.contains_key(&j) { temp_map[&j] } else { 0 },
+                );
+            }
+        }
+
+        // println!("{:#?}", temp_map);
+
+        for (key, value) in temp_map {
+            let val_to_insert = max(
+                if prime_factors.contains_key(&key) { prime_factors[&key] } else { 0 },
+                value,
+            );
+
+            prime_factors.insert(key, val_to_insert);
+        }
     }
 
-    println!("TOTAL STEPS TAKEN: {num_steps}");
+    let mut prod = 1;
+
+    // println!("{:#?}", prime_factors);
+
+    for (base, exp) in prime_factors {
+        prod *= base.pow(exp);
+    }
+
+    println!("TOTAL STEPS TAKEN: {prod}");
 }
 
 fn get_starting_nodes<'a>(network: &'a HashMap<&'a str, Node>) -> Vec<&'a str> {
@@ -121,13 +151,4 @@ fn get_starting_nodes<'a>(network: &'a HashMap<&'a str, Node>) -> Vec<&'a str> {
     }
 
     ret
-}
-
-fn all_nodes_finished(nodes: &Vec<&str>) -> bool {
-    for node in nodes {
-        if !node.ends_with('Z') {
-            return false;
-        }
-    }
-    true
 }
