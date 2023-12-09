@@ -78,3 +78,56 @@ fn parse_network(input: &str) -> HashMap<&str, Node> {
 
     network
 }
+
+/// part 2
+
+pub fn solve() -> () {
+    let input = fs::read_to_string(FILE_PATH).expect("SHOULDVE READ FILE JUST FINE");
+    let splitted_input: Vec<&str> = input.split("\n\n").collect();
+
+    let sequence = parse_sequence(splitted_input[0]);
+    let sequence_leng = sequence.len();
+    let network = parse_network(splitted_input[1]);
+
+    let mut num_steps = 0;
+    let mut i: usize = 0;
+    let mut curr_node_keys = get_starting_nodes(&network);
+
+    while !all_nodes_finished(&curr_node_keys) {
+        let mut next_nodes = Vec::new();
+        let next_step = &sequence[i];
+
+        for curr_node_key in curr_node_keys {
+            let curr_node = network.get(curr_node_key).unwrap();
+            next_nodes.push(curr_node.get_next_node(&next_step));
+        }
+        
+        curr_node_keys = next_nodes;
+        println!("next nodes: {:#?}", curr_node_keys);
+        i = (i + 1) % sequence_leng;
+        num_steps += 1;
+    }
+
+    println!("TOTAL STEPS TAKEN: {num_steps}");
+}
+
+fn get_starting_nodes<'a>(network: &'a HashMap<&'a str, Node>) -> Vec<&'a str> {
+    let mut ret = Vec::new();
+
+    for node_key in network.keys() {
+        if node_key.ends_with('A') {
+            ret.push(*node_key);
+        }
+    }
+
+    ret
+}
+
+fn all_nodes_finished(nodes: &Vec<&str>) -> bool {
+    for node in nodes {
+        if !node.ends_with('Z') {
+            return false;
+        }
+    }
+    true
+}
